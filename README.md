@@ -69,6 +69,7 @@ clearly losing style, and has Claude propose one new style to test.
 ## Commands
 
 ```bash
+python -m housing_bot init           # setup questions; writes .env and config.yaml
 python -m housing_bot check          # test every connection and setting
 python -m housing_bot run            # the 24/7 loop (Docker runs this)
 python -m housing_bot process URL    # run one listing through the whole pipeline now
@@ -82,7 +83,7 @@ With Docker: `docker compose run --rm housing-bot python -m housing_bot check`, 
 
 ## Setup
 
-See **[docs/SETUP.md](docs/SETUP.md)**: about 1.5 hours, most of it creating accounts.
+See **[docs/SETUP.md](docs/SETUP.md)**: about an hour, most of it creating accounts. On the server, `./scripts/install.sh` does the rest.
 
 ## Costs (monthly, estimates)
 

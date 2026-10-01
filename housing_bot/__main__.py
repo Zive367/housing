@@ -105,6 +105,7 @@ def cmd_check(ctx) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(prog="housing_bot", description="Rental search bot for the Den Haag region")
     sub = parser.add_subparsers(dest="command", required=True)
+    sub.add_parser("init", help="answer the setup questions; writes .env and config.yaml in this folder")
     sub.add_parser("run", help="watch the mailbox 24/7 and process everything")
     sub.add_parser("check", help="test all connections and settings")
     p = sub.add_parser("process", help="process one listing URL now (respects dry_run)")
@@ -121,6 +122,12 @@ def main() -> None:
     logging.getLogger("httpx").setLevel(logging.WARNING)
     if args.command == "login":
         cmd_login(args.url)
+        return
+    if args.command == "init":
+        from pathlib import Path
+
+        from . import wizard
+        wizard.run(Path.cwd())
         return
 
     from . import learn, runner

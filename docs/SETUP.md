@@ -59,24 +59,23 @@ On your phone, turn on notifications for that inbox. In Gmail you can add a filt
 → **Star it** + **Always mark as important**, so viewing alerts stand out. Test it with
 `python -m housing_bot test-notify`.
 
-## 6. Server (20 min)
+## 6. Server (15 min)
 
 1. Hetzner Cloud (or similar) → create a **CX22** server with **Ubuntu 24.04**, location Falkenstein or
    Nuremberg, add your SSH key. About €5/month.
-2. On the server:
+2. Copy your Google key to the server, then log in and run the installer:
 
    ```bash
-   curl -fsSL https://get.docker.com | sh
+   scp google-service-account.json root@SERVER:/root/
+   ssh root@SERVER
    git clone https://github.com/Zive367/housing.git && cd housing
-   cp .env.example .env && nano .env                     # fill everything in
-   cp config.example.yaml config.yaml && nano config.yaml  # set work.address to your workplace
-   mkdir -p secrets/sessions data
-   # copy secrets/google-service-account.json here (scp from your laptop)
-   docker compose build
-   docker compose run --rm housing-bot python -m housing_bot check
+   mkdir -p secrets && mv /root/google-service-account.json secrets/
+   ./scripts/install.sh
    ```
 
-   `check` must say OK on every line. Fix whatever says FAIL first.
+   The installer installs Docker, builds the bot, asks you the setup questions (bot Gmail, keys, your and
+   your partner's details, work address, budget), writes `.env` and `config.yaml`, runs `check`, and starts the
+   bot. If a check says FAIL, fix it (`nano .env` or `nano config.yaml`) and run `./scripts/install.sh` again.
 
 ## 7. Site logins (optional, 10 min, on your laptop)
 
@@ -92,12 +91,9 @@ scp secrets/sessions/*.json server:housing/secrets/sessions/
 
 Without a saved login, those sites end up as "apply yourself" emails with the text ready to paste.
 
-## 8. Start in dry-run mode
+## 8. Dry run, then go live
 
-```bash
-docker compose up -d
-docker compose logs -f
-```
+The installer started the bot. Watch it with `docker compose logs -f`.
 
 `apply.dry_run: true` is the default: everything runs and messages are written into the sheet (status
 `READY`), but nothing is sent. Test it on one real listing too:
