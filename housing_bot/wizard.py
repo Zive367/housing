@@ -83,6 +83,7 @@ def run(root: Path, ask: Ask = input, secret: Ask = getpass, client: httpx.Clien
     sheet = _ask(ask, "Google Sheet link or ID", required=True)
     match = re.search(r"/d/([A-Za-z0-9_-]+)", sheet)
     env["GOOGLE_SHEET_ID"] = match.group(1) if match else sheet
+    env["DASHBOARD_PASSWORD"] = secret("Password for the phone dashboard (input hidden, 12+ characters): ").strip()
     env["NOTIFY_EMAIL"] = _ask(ask, "Email address for the bot's alerts to you", gmail, check=_email)
 
     print("\n== You ==")

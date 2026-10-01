@@ -47,6 +47,11 @@ alert email (Funda / Pararius / Huurwoningen / Kamernet)  reply from an agent
 - Apply to listings with a scam score of 70 or more (`scam.block_score`).
 - Create accounts on sites. You do that once and save the login (see [docs/SETUP.md](docs/SETUP.md)).
 
+## Phone dashboard
+
+A private page (via Tailscale, password-protected) with everything that needs you first and one-tap
+buttons: apply, viewing booked, called, rejected, skip. Setup: step 9 in [docs/SETUP.md](docs/SETUP.md).
+
 ## The Google Sheet
 
 | Tab | What's in it |
@@ -75,6 +80,7 @@ python -m housing_bot run            # the 24/7 loop (Docker runs this)
 python -m housing_bot process URL    # run one listing through the whole pipeline now
 python -m housing_bot test-notify    # send a test notification email
 python -m housing_bot login URL      # log in to a site once, save the session (run on your laptop)
+python -m housing_bot web            # only the phone dashboard (`run` already includes it)
 python -m housing_bot digest         # send the daily summary now
 python -m housing_bot learn          # run the weekly review now
 ```

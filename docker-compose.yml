@@ -3,6 +3,10 @@ services:
     build: .
     restart: unless-stopped
     env_file: .env
+    ports:
+      # Phone dashboard. Only reachable from the server itself: use `tailscale serve` to reach it from your
+      # phone (see docs/SETUP.md). Don't change this to a public port.
+      - "127.0.0.1:8080:8080"
     volumes:
       - ./config.yaml:/app/config.yaml:ro
       - ./secrets:/app/secrets

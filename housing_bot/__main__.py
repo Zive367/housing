@@ -118,6 +118,7 @@ def main() -> None:
     sub.add_parser("test-notify", help="send a test notification")
     p = sub.add_parser("login", help="log in to a site once in a visible browser and save the session")
     p.add_argument("url")
+    sub.add_parser("web", help="run only the phone dashboard (the `run` command already includes it)")
     sub.add_parser("digest", help="send the daily summary now")
     sub.add_parser("learn", help="run the weekly review now")
     args = parser.parse_args()
@@ -151,6 +152,11 @@ def main() -> None:
     elif args.command == "test-notify":
         ok = ctx.notifier.send("Test", "If you can read this, notifications work.", "https://example.com")
         print("sent" if ok else "FAILED: check NOTIFY_EMAIL and the mailbox settings in .env")
+    elif args.command == "web":
+        from . import web
+        web.serve(ctx, ctx.cfg.secrets.dashboard_port)
+        while True:
+            time.sleep(3600)
     elif args.command == "digest":
         text = runner.digest_text(ctx, time.time() - 86400)
         ctx.notifier.send("Daily summary", text)

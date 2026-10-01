@@ -110,6 +110,28 @@ That shows whether the site's pages and forms work from your server. After a day
 sheet's **Message sent** column. When you're happy, set `apply.dry_run: false` in `config.yaml` and run
 `docker compose restart`.
 
+## 9. Phone dashboard (10 min)
+
+The bot serves a page with everything that needs you first (book a viewing, apply yourself, documents,
+calls), with buttons: **Apply** copies the message and opens the listing, plus **Mark applied**, **Viewing
+booked**, **Called**, **Rejected**, **Skip**. Every tap updates the Google Sheet too.
+
+It is only reachable through **Tailscale** (free), a private network between your server and your phone, so
+it is never on the open internet.
+
+1. Set a password: `nano .env` and fill in `DASHBOARD_PASSWORD=` (12+ characters), then
+   `docker compose up -d --build`.
+2. On the server:
+
+   ```bash
+   curl -fsSL https://tailscale.com/install.sh | sh
+   tailscale up                 # open the link it prints and log in (Google login is fine)
+   tailscale serve --bg 8080    # prints your private address, like https://ubuntu-2gb-nbg1-1.tailXXXX.ts.net
+   ```
+3. On your phone: install the **Tailscale** app, log in with the same account, switch it on.
+4. Open the `https://...ts.net` address in your phone's browser, log in with the dashboard password, then
+   **Add to Home Screen** (Safari: share button; Chrome: ⋮ menu). It now opens like an app.
+
 ## Day to day
 
 - **Email alerts** (🚩) tell you about booked viewings, viewing invites (book fast), document requests, questions,

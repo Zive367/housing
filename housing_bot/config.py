@@ -113,6 +113,8 @@ class Secrets(BaseModel):
     # Address agents see and reply to, e.g. you+housing@gmail.com. The bot only reads mail sent to it
     # (plus alerts from the housing sites), so the rest of a personal inbox is never touched.
     housing_address: str = ""
+    dashboard_password: str = ""
+    dashboard_port: int = 8080
     imap_host: str = "imap.gmail.com"
     smtp_host: str = "smtp.gmail.com"
     smtp_port: int = 587

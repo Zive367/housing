@@ -144,6 +144,12 @@ def run(ctx: Context) -> None:
     mode = "DRY RUN (nothing is sent)" if cfg.apply.dry_run else "LIVE (applications are sent)"
     log.info("housing bot running: %s, polling every %ss", mode, cfg.schedule.inbox_poll_seconds)
 
+    if cfg.secrets.dashboard_password:
+        from . import web
+        web.serve(ctx, cfg.secrets.dashboard_port)
+    else:
+        log.info("dashboard off (set DASHBOARD_PASSWORD in .env to turn it on)")
+
     global _last_beat
     threading.Thread(target=_watchdog, daemon=True, name="watchdog").start()
     with ThreadPoolExecutor(max_workers=6, thread_name_prefix="worker") as pool:
