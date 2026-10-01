@@ -103,6 +103,7 @@ class Listing(BaseModel):
     address_verified: bool | None = None
     distance_km: float | None = None
     bike_minutes: int | None = None
+    walk_minutes: int | None = None
     neighbourhood_score: float | None = None
 
     # verification / decision

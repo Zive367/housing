@@ -17,7 +17,7 @@ from .config import DATA_DIR, Config
 from .decide import decide, rank, total_rent
 from .extract import extract
 from .fetch import fetch, normalize_phone
-from .geo import bike_minutes, geocode_address, haversine_km, locate, neighbourhood_score
+from .geo import bike_minutes, geocode_address, haversine_km, locate, neighbourhood_score, walk_minutes
 from .ingest import LISTING_PATTERNS, canonical_url, domain_of, listing_id
 from .llm import LLM, BudgetExceeded, LLMError
 from .mail import Email, Mailbox
@@ -75,7 +75,7 @@ def build_context(cfg: Config, with_sheet: bool = True) -> Context:
     if with_sheet and s.google_service_account_file and s.google_sheet_id:
         sheet = Sheet(s.google_service_account_file, s.google_sheet_id)
     http = httpx.Client(timeout=25, follow_redirects=True)
-    return Context(cfg, store, llm, mailbox, sheet, Notifier(cfg, mailbox, http), http)
+    return Context(cfg, store, llm, mailbox, sheet, Notifier(cfg, mailbox), http)
 
 
 def _when(ts: float) -> str:
@@ -146,6 +146,7 @@ def _process(ctx: Context, listing: Listing) -> None:
         if work and place.lat is not None:
             listing.distance_km = round(haversine_km(work[0], work[1], place.lat, place.lon), 2)
             listing.bike_minutes = bike_minutes(listing.distance_km)
+            listing.walk_minutes = walk_minutes(listing.distance_km)
         listing.neighbourhood_score = neighbourhood_score(ctx.http, store, cfg.neighbourhood.cbs_table,
                                                           place.buurt_code, place.wijk_code)
     else:
@@ -205,11 +206,11 @@ def _process(ctx: Context, listing: Listing) -> None:
     where = f"{listing.address} · €{listing.total_rent or '?'} · {listing.bike_minutes or '?'} min by bike"
     if listing.status == Status.MANUAL_APPLY:
         call = f" Call {listing.phone}." if listing.call_needed else ""
-        ctx.notifier.send("Apply yourself, fast", f"{where}. {outcome.detail}.{call} Message is in the sheet.",
-                          listing.url, important=True)
+        ctx.notifier.send("Apply yourself, fast", f"{where}. {outcome.detail}.{call}\n\n"
+                          f"Message to paste:\n\n{listing.message}", listing.url, important=True)
     elif listing.status == Status.APPLIED and outcome.detail.startswith("⚠"):
         ctx.notifier.send("Check this application", f"{where}. {outcome.detail[2:]}. If it didn't go through, "
-                          "apply yourself: the message is in the sheet.", listing.url)
+                          f"apply yourself with this message:\n\n{listing.message}", listing.url)
     elif listing.status == Status.APPLIED and verdict.score >= cfg.scam.warn_score:
         ctx.notifier.send("Applied, but verify first",
                           f"{where}. Scam risk {verdict.score}/100: {'; '.join(verdict.reasons[:3])}. "

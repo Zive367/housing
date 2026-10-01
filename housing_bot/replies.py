@@ -48,7 +48,7 @@ POSTCODE_NUMBER = re.compile(r"\b(\d{4})\s?([A-Z]{2})\b[^\d]{0,40}?(\d+)|(\d+)[^
 def analyze(llm: LLM, mail: Email) -> ReplyAnalysis:
     prompt = (f"From: {mail.sender}\nSubject: {mail.subject}\nLinks: {mail.links[:15]}\n\n"
               f"Body:\n{mail.text[:8000]}")
-    return llm.parse(ReplyAnalysis, SYSTEM, prompt, bulk=True, effort="low", max_tokens=3000)
+    return llm.parse(ReplyAnalysis, SYSTEM, prompt, effort="low", max_tokens=3000)
 
 
 def address_key(postcode: str | None, number: str | int | None) -> str:

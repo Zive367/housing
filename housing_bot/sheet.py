@@ -43,6 +43,7 @@ COLUMNS: list[tuple[str, Callable[[Listing], object]]] = [
     ("Furnished", lambda l: _d(l, "furnished")),
     ("Registration", lambda l: _d(l, "registration_allowed")),
     ("Bike min", lambda l: l.bike_minutes),
+    ("Walk min", lambda l: l.walk_minutes),
     ("km to work", lambda l: round(l.distance_km, 1) if l.distance_km is not None else ""),
     ("Area score /10", lambda l: l.neighbourhood_score),
     ("Scam risk /100", lambda l: l.scam_score),

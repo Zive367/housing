@@ -8,22 +8,25 @@ address and a private card.
 1. Create a new Gmail account, e.g. `firstname.lastname.housing@gmail.com`. Agents will see this address.
 2. Turn on 2-Step Verification, then create an **App password** (Google Account → Security → App passwords).
    That 16-character password goes in `.env` as `BOT_EMAIL_APP_PASSWORD`.
-3. In Gmail → Settings → Filters, create a filter for `from:(stekkies OR funda OR pararius OR huurwoningen OR kamernet)`
+3. In Gmail → Settings → Filters, create a filter for `from:(funda OR pararius OR huurwoningen OR kamernet)`
    with **Never send it to Spam**. The bot also checks the spam folder, but filters keep things fast.
 
-## 2. Listing alerts → the bot mailbox (20 min)
+## 2. Free listing alerts → the bot mailbox (20 min)
 
-**Signaal only sends push notifications to its app.** It has no email alerts and no API, so the bot can't read it.
-Keep it on your phone if you like it, but the bot needs alerts by email:
+Create a free account on each site with the **bot mailbox** address and save a search with email alerts.
+Filters everywhere: Den Haag, Rijswijk, Voorburg/Leidschendam, Delft (+ Wassenaar, Nootdorp if you like),
+max €1,500, from 25 m², apartment/studio/house, no rooms. Choose the fastest frequency each site offers
+("direct" / "instant", not daily).
 
-- **Stekkies** (recommended, ~€17/month, 1,000+ sites, alerts within ~30 s): set email alerts to the bot
-  mailbox. Filters: Den Haag, Rijswijk, Voorburg/Leidschendam, Delft (+ Wassenaar, Nootdorp if you like),
-  max €1,500, from 25 m², apartment/studio/house, no rooms.
-- **Free extras** (also to the bot mailbox, same filters, "instant/direct" frequency where offered):
-  Funda (saved search), Pararius (zoekopdracht), Huurwoningen.nl, Kamernet.
-- More sources = faster and more listings. Duplicates are merged automatically.
+- **Funda**: saved search → notifications by email.
+- **Pararius**: zoekopdracht opslaan → email alert.
+- **Huurwoningen.nl** and **Kamernet**: search alert by email. (Reacting on these sites may need their paid
+  plan; then those listings come to you as "apply yourself" instead.)
 
-If you use a different alert service, add its sending domain to `alerts.sender_domains` in `config.yaml`.
+More sources = more listings. Duplicates across sites are merged automatically. If you add another free
+alert source later, put its sending domain in `alerts.sender_domains` in `config.yaml`.
+
+Signaal can't feed the bot (app push only), but it's fine to keep using it yourself next to the bot.
 
 ## 3. Claude API key (5 min)
 
@@ -43,39 +46,18 @@ Set a **monthly spend limit** in the console as well (e.g. $60). The bot also st
 
 The bot creates the tabs, headers and colours itself.
 
-## 5. WhatsApp notifications (30 min, or 2 min with option B)
+## 5. Notifications by email (5 min)
 
-**Option A: official WhatsApp Cloud API (recommended, a few cents per message).**
+Set `NOTIFY_EMAIL` in `.env` to your personal email (not the bot mailbox, not a work address). Alerts arrive
+from the bot mailbox with subjects like:
 
-1. developers.facebook.com → create an app of type **Business** → add the **WhatsApp** product.
-2. In **WhatsApp → API Setup** you get a free test sender number and its **Phone number ID**
-   (`WHATSAPP_PHONE_NUMBER_ID`). Add your own WhatsApp number as a recipient and verify it (`WHATSAPP_TO`,
-   format `316XXXXXXXX`).
-3. Create a **permanent access token**: Meta Business settings → System users → add one (Admin) → assign the
-   app → Generate token with `whatsapp_business_messaging` permission → `WHATSAPP_TOKEN`.
-   (The temporary token on the API Setup page expires after 24 hours.)
-4. **WhatsApp Manager → Message templates → Create template**: category **Utility**, name `housing_alert`,
-   language **English**, body:
+- `[Housing bot] 🚩 VIEWING BOOKED`, `🚩 Book the viewing NOW`, `🚩 Agent asks for documents`,
+  `🚩 Reply needed`, `🚩 Apply yourself, fast`: act on these quickly.
+- `[Housing bot] Daily summary` (08:00) and `Weekly review` (Sunday evening).
 
-   ```
-   Housing bot: {{1}}
-
-   {{2}}
-
-   Link: {{3}}
-
-   Automatic update from your rental search.
-   ```
-
-   Sample values: `Viewing booked` · `Prinsegracht 12, Den Haag on Tue 7 Oct 18:30, agent Petra` ·
-   `https://www.pararius.nl/`. Approval usually takes minutes to a day.
-
-**Option B: CallMeBot (free, unofficial, 2 minutes).** Follow callmebot.com's WhatsApp instructions to get
-an API key, then set `NOTIFY_CHANNEL=callmebot`, `CALLMEBOT_PHONE`, `CALLMEBOT_APIKEY`. Downside: a third party
-sees your alerts (addresses, viewing times), and it's a hobby service that can stop working.
-
-Either way, set `NOTIFY_EMAIL` to your personal email. Important alerts (viewing booked, act now) are always
-emailed there too, so a WhatsApp hiccup can't hide them.
+On your phone, turn on notifications for that inbox. In Gmail you can add a filter on `subject:("[Housing bot] 🚩")`
+→ **Star it** + **Always mark as important**, so viewing alerts stand out. Test it with
+`python -m housing_bot test-notify`.
 
 ## 6. Server (20 min)
 
@@ -108,7 +90,7 @@ python -m housing_bot login https://kamernet.nl/en/login
 scp secrets/sessions/*.json server:housing/secrets/sessions/
 ```
 
-Without a saved login, those sites end up as "apply yourself" WhatsApp messages with the text ready to paste.
+Without a saved login, those sites end up as "apply yourself" emails with the text ready to paste.
 
 ## 8. Start in dry-run mode
 
@@ -130,7 +112,7 @@ sheet's **Message sent** column. When you're happy, set `apply.dry_run: false` i
 
 ## Day to day
 
-- **WhatsApp** tells you about booked viewings (🚩), viewing invites (book fast), document requests, questions,
+- **Email alerts** (🚩) tell you about booked viewings, viewing invites (book fast), document requests, questions,
   and listings you need to apply to yourself. You get a summary every morning at 08:00 and a review on Sundays.
 - **The sheet** is the full picture. Filter on the 🚩 and 📞 columns.
 - **Calls:** the `📞` column marks listings where calling helps: phone-only listings, and applications with no

@@ -150,6 +150,11 @@ def bike_minutes(km: float) -> int:
     return round(km * 1.25 / 16 * 60)
 
 
+def walk_minutes(km: float) -> int:
+    """Straight-line km -> rough walking time (25% detour, 5 km/h)."""
+    return round(km * 1.25 / 5 * 60)
+
+
 def _scale(value: float | None, worst: float, best: float) -> float | None:
     if value is None:
         return None

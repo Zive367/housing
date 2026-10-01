@@ -87,12 +87,9 @@ def cmd_check(ctx) -> None:
         return "chromium ok"
 
     def notify() -> str:
-        s = cfg.secrets
-        needed = {"whatsapp_cloud": [s.whatsapp_token, s.whatsapp_phone_number_id, s.whatsapp_to],
-                  "callmebot": [s.callmebot_phone, s.callmebot_apikey], "email": [s.notify_email]}
-        if not all(needed.get(s.notify_channel, [None])):
-            raise ValueError(f"settings for NOTIFY_CHANNEL={s.notify_channel} incomplete")
-        return f"{s.notify_channel} (backup email: {s.notify_email or 'none'})"
+        if not cfg.secrets.notify_email:
+            raise ValueError("NOTIFY_EMAIL missing")
+        return f"emails go to {cfg.secrets.notify_email}"
 
     for name, fn in [("Applicant profile", applicant), ("Claude API", claude), ("Mailbox IMAP", imap),
                      ("Mailbox SMTP", smtp), ("Google Sheet", sheet), ("Work address", work),
@@ -142,7 +139,7 @@ def main() -> None:
         print(listing.model_dump_json(indent=2, exclude={"details": {"red_flag_quotes"}}))
     elif args.command == "test-notify":
         ok = ctx.notifier.send("Test", "If you can read this, notifications work.", "https://example.com")
-        print("sent" if ok else "FAILED: check the notification settings in .env")
+        print("sent" if ok else "FAILED: check NOTIFY_EMAIL and the mailbox settings in .env")
     elif args.command == "digest":
         text = runner.digest_text(ctx, time.time() - 86400)
         ctx.notifier.send("Daily summary", text)

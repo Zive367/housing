@@ -73,7 +73,7 @@ class Apply(BaseModel):
 
 class LLMConfig(BaseModel):
     model: str = "claude-opus-5-5"
-    bulk_model: str = "claude-opus-5-5"
+    bulk_model: str = "claude-haiku-4-5"
     daily_budget_usd: float = 5.0
 
 
@@ -115,15 +115,6 @@ class Secrets(BaseModel):
     smtp_port: int = 465
     google_service_account_file: str = ""
     google_sheet_id: str = ""
-    notify_channel: str = "whatsapp_cloud"
-    whatsapp_token: str = ""
-    whatsapp_phone_number_id: str = ""
-    whatsapp_to: str = ""
-    whatsapp_template: str = "housing_alert"
-    whatsapp_template_lang: str = "en"
-    whatsapp_api_version: str = "v21.0"
-    callmebot_phone: str = ""
-    callmebot_apikey: str = ""
     notify_email: str = ""
     applicant_phone: str = ""
 

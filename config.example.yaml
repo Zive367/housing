@@ -68,12 +68,6 @@ alerts:
   # Emails from these sender domains are treated as listing alerts.
   # Everything else that arrives in the bot mailbox is treated as a possible reply from an agent.
   sender_domains:
-    - stekkies.com
-    - stekkies.nl
-    - findify.nl
-    - uprent.nl
-    - rentbird.nl
-    - rentslam.com
     - funda.nl
     - pararius.nl
     - pararius.com
@@ -95,8 +89,8 @@ apply:
     - holland2stay.com
 
 llm:
-  model: claude-opus-5-5        # message writing, scam judgement, form filling
-  bulk_model: claude-opus-5-5   # page extraction + email triage (claude-haiku-4-5 cuts this cost ~4x)
+  model: claude-opus-5-5        # messages, scam judgement, form filling, reading agents' replies
+  bulk_model: claude-haiku-4-5  # reading listing pages (cheap, high volume)
   daily_budget_usd: 5.0         # hard stop; the bot falls back to rules-only when exceeded
 
 schedule:
