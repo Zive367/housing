@@ -1,0 +1,14 @@
+# Secrets and personal data: never commit these
+.env
+config.yaml
+secrets/
+data/
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+build/
+dist/

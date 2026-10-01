@@ -1,0 +1,113 @@
+# Copy to `config.yaml` (gitignored) and adjust. Secrets and personal data go in `.env`.
+
+work:
+  # Commute estimates are measured from here. Put your real work address in config.yaml.
+  address: "Street 1, 1234 AB Den Haag"
+
+search:
+  max_rent: 1500                # hard cap, EUR/month incl. service costs
+  preferred_rent: 1400          # at or below this ranks higher
+  municipalities:               # names as the Dutch address register (BAG/PDOK) spells them
+    - "'s-Gravenhage"           # Den Haag
+    - "Rijswijk"
+    - "Leidschendam-Voorburg"   # Voorburg
+    - "Delft"
+    - "Wassenaar"
+    - "Pijnacker-Nootdorp"
+  max_distance_km: 12           # straight-line distance to work
+  min_size_m2_solo: 25
+  min_size_m2_couple: 35
+  prefer_furnished: true        # furnished ranks higher; unfurnished is still accepted
+  require_registration: true    # skip listings where you can't register (inschrijven) at the address
+  exclude_rooms: true           # skip rooms in shared houses
+  exclude_students_only: true
+  min_contract_months: 6        # skip short-stay / holiday rentals
+  min_neighbourhood_score: 0    # 0 = off. 1-10 scale built from CBS income/WOZ/benefits data
+
+income:
+  # Gross monthly income must be >= multiplier x rent. Used when a listing doesn't state its own rule.
+  default_multiplier: 3.5
+  # At or above this size, apply as a couple when combined income qualifies.
+  couple_preferred_size_m2: 45
+
+permits:
+  # Den Haag huisvestingsvergunning (rules as published on denhaag.nl, 2026).
+  # A permit is needed for rents up to the middle-rent cap; income caps apply.
+  - municipality: "'s-Gravenhage"
+    bands:
+      - max_rent: 932.93
+        income_max_single: 51537
+        income_max_multi: 56910
+      - max_rent: 1228.07
+        income_max_single: 70149
+        income_max_multi: 93531
+
+scam:
+  block_score: 70               # never apply at or above this score
+  warn_score: 40                # apply, but flag in the sheet and notify
+  # Rough market EUR/m2 per month. A price far below this is a classic scam signal.
+  expected_price_per_m2:
+    "'s-Gravenhage": 23
+    "Delft": 22
+    "Rijswijk": 20
+    "Leidschendam-Voorburg": 20
+    default: 20
+  trusted_domains:
+    - funda.nl
+    - pararius.nl
+    - pararius.com
+    - huurwoningen.nl
+    - kamernet.nl
+    - vesteda.com
+    - holland2stay.com
+    - wonenbijbouwinvest.nl
+    - mvgm.nl
+    - rebogroep.nl
+
+alerts:
+  # Emails from these sender domains are treated as listing alerts.
+  # Everything else that arrives in the bot mailbox is treated as a possible reply from an agent.
+  sender_domains:
+    - stekkies.com
+    - stekkies.nl
+    - findify.nl
+    - uprent.nl
+    - rentbird.nl
+    - rentslam.com
+    - funda.nl
+    - pararius.nl
+    - pararius.com
+    - huurwoningen.nl
+    - kamernet.nl
+    - housinganywhere.com
+
+apply:
+  dry_run: true                 # start true: messages are written and logged but NOT sent
+  # Message languages to A/B test. Remove "nl" if you'd rather not get Dutch replies or calls.
+  # English-language listings always get an English message.
+  languages: [en, nl]
+  max_per_hour: 20
+  max_per_agency_per_day: 5
+  browser_forms: true           # fill web contact forms with a headless browser
+  # Booking platforms where "applying" means reserving or paying: always left to you.
+  manual_only_domains:
+    - housinganywhere.com
+    - holland2stay.com
+
+llm:
+  model: claude-opus-5-5        # message writing, scam judgement, form filling
+  bulk_model: claude-opus-5-5   # page extraction + email triage (claude-haiku-4-5 cuts this cost ~4x)
+  daily_budget_usd: 5.0         # hard stop; the bot falls back to rules-only when exceeded
+
+schedule:
+  timezone: Europe/Amsterdam
+  inbox_poll_seconds: 20
+  digest_time: "08:00"
+  weekly_learn_day: sun
+  weekly_learn_time: "20:00"
+  # After this many days without a reply, an application counts as "no response"
+  # and gets a call flag if a phone number is known.
+  no_response_days: 4
+
+neighbourhood:
+  cbs_table: 85984NED           # CBS "Kerncijfers wijken en buurten 2024"

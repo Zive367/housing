@@ -1,0 +1,20 @@
+services:
+  housing-bot:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - ./config.yaml:/app/config.yaml:ro
+      - ./secrets:/app/secrets
+      - ./data:/app/data
+    healthcheck:
+      # Healthy while the main loop has written a heartbeat in the last 5 minutes.
+      test: ["CMD", "python", "-c", "import sqlite3,sys,time; r=sqlite3.connect('/app/data/housing.db').execute(\"select value from kv where key='heartbeat'\").fetchone(); sys.exit(0 if r and time.time()-float(r[0])<300 else 1)"]
+      interval: 2m
+      timeout: 10s
+      retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
