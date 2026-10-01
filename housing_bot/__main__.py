@@ -54,7 +54,11 @@ def cmd_check(ctx) -> None:
     def claude() -> str:
         if ctx.llm is None:
             raise ValueError("ANTHROPIC_API_KEY missing")
-        return ctx.llm.client.models.retrieve(cfg.llm.model).display_name
+        # A real (tiny) request: listing models works even with no credit left, a message does not.
+        for model in dict.fromkeys([cfg.llm.model, cfg.llm.bulk_model]):
+            ctx.llm.client.messages.create(model=model, max_tokens=16,
+                                           messages=[{"role": "user", "content": "Reply with OK."}])
+        return f"{cfg.llm.model} + {cfg.llm.bulk_model} answering (credit available)"
 
     def imap() -> str:
         s = cfg.secrets
