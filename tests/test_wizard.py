@@ -13,8 +13,8 @@ def test_wizard_writes_env_and_config(tmp_path, monkeypatch):
     shutil.copy(ROOT / "config.example.yaml", tmp_path / "config.example.yaml")
     monkeypatch.setattr(wizard, "geocode_address", lambda client, address: (52.08148, 4.32340))
     answers = iter([
-        "bot.housing@gmail.com",                                 # bot email
-        "", "https://docs.google.com/spreadsheets/d/AbC123_x/edit", "me@example.com",
+        "sam.jansen@gmail.com", "",                              # gmail, housing address (default)
+        "", "https://docs.google.com/spreadsheets/d/AbC123_x/edit", "",
         "Sam", "Jansen", "06 12345678", "30", "analyst", "", "", "Dutch", "", "4500",
         "Alex", "29", "designer", "permanent", "3500",
         "Koningin Julianaplein 10, 2595 AA Den Haag", "", "1350", "", "40", "nl",
@@ -25,6 +25,8 @@ def test_wizard_writes_env_and_config(tmp_path, monkeypatch):
                if "=" in line and not line.startswith("#"))
     assert env["BOT_EMAIL_APP_PASSWORD"] == "abcdefghijklmnop"
     assert env["GOOGLE_SHEET_ID"] == "AbC123_x"
+    assert env["HOUSING_ADDRESS"] == "sam.jansen+housing@gmail.com"
+    assert env["NOTIFY_EMAIL"] == "sam.jansen@gmail.com"
     assert env["APPLICANT_PHONE"] == "+31612345678"
     assert env["APPLICANT_CONTRACT"] == "permanent" and env["PARTNER_GROSS_MONTHLY_INCOME"] == "3500"
     assert (tmp_path / ".env").stat().st_mode & 0o777 == 0o600

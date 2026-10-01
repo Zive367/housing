@@ -16,7 +16,7 @@ on reach you by email (🚩 in the subject).
 alert email (Funda / Pararius / Huurwoningen / Kamernet)  reply from an agent
         │                                                      │
         ▼                                                      ▼
-  bot mailbox (dedicated Gmail) ── polled every 20 s ──► reply triage (Claude)
+  your Gmail (housing mail only) ─ polled every 20 s ─► reply triage (Claude)
         │                                                      │
         ▼                                                      ▼
   listing links ─► fetch page ─► extract facts (Claude)    match to listing

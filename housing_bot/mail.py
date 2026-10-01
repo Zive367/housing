@@ -95,6 +95,15 @@ class Mailbox:
         self.cfg = cfg
         self.store = store
 
+    def gmail_query(self) -> str | None:
+        """Gmail-side filter so only housing mail is ever downloaded: alerts from the housing sites and anything
+        sent to the housing address. None (no filter) only when no separate housing address is configured."""
+        s = self.cfg.secrets
+        if "gmail" not in s.imap_host or not s.housing_address:
+            return None
+        sites = " OR ".join(self.cfg.alerts.sender_domains)
+        return f"from:({sites}) OR to:{s.housing_address} OR deliveredto:{s.housing_address}"
+
     def fetch_new(self) -> list[Email]:
         """New messages since the last poll, across inbox and spam."""
         s = self.cfg.secrets
@@ -120,10 +129,14 @@ class Mailbox:
             # First run (or mailbox reset): only look at the last day, don't replay history.
             last = 0
             since = (datetime.now() - timedelta(days=1)).strftime("%d-%b-%Y")
-            status, data = imap.uid("SEARCH", None, "SINCE", since)
+            criteria = ["SINCE", since]
         else:
             last = int(prev_uid)
-            status, data = imap.uid("SEARCH", None, "UID", f"{last + 1}:*")
+            criteria = ["UID", f"{last + 1}:*"]
+        query = self.gmail_query()
+        if query:
+            criteria += ["X-GM-RAW", '"' + query.replace('"', "") + '"']
+        status, data = imap.uid("SEARCH", None, *criteria)
         uids = [int(u) for u in data[0].split()] if status == "OK" and data and data[0] else []
         uids = [u for u in uids if u > last]  # "N:*" always returns the newest UID, even if < N
 
@@ -150,6 +163,8 @@ class Mailbox:
         msg = EmailMessage()
         msg["From"] = formataddr((from_name, s.bot_email)) if from_name else s.bot_email
         msg["To"] = to
+        if s.housing_address and s.housing_address != s.bot_email:
+            msg["Reply-To"] = s.housing_address
         msg["Subject"] = subject
         message_id = make_msgid(domain=s.bot_email.rsplit("@", 1)[-1] if "@" in s.bot_email else None)
         msg["Message-ID"] = message_id

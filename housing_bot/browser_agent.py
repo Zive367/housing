@@ -136,7 +136,7 @@ def applicant_values(cfg: Config, listing: Listing, message: str) -> dict[str, s
     a = cfg.applicant
     return {
         "first_name": a.first_name, "last_name": a.last_name, "full_name": f"{a.first_name} {a.last_name}".strip(),
-        "email": cfg.secrets.bot_email, "phone": cfg.secrets.applicant_phone, "message": message,
+        "email": cfg.secrets.contact_email, "phone": cfg.secrets.applicant_phone, "message": message,
         "persons": "2" if listing.apply_as == "couple" else "1",
         "move_in_date": date.today().strftime("%d-%m-%Y"), "age": a.age, "job_title": a.job_title,
     }

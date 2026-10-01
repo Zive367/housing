@@ -3,17 +3,20 @@
 Do the steps in order. Keep everything private and separate from work: private accounts, a private email
 address and a private card.
 
-## 1. Bot mailbox (10 min)
+## 1. Mailbox (5 min)
 
-1. Create a new Gmail account, e.g. `firstname.lastname.housing@gmail.com`. Agents will see this address.
-2. Turn on 2-Step Verification, then create an **App password** (Google Account → Security → App passwords).
-   That 16-character password goes in `.env` as `BOT_EMAIL_APP_PASSWORD`.
-3. In Gmail → Settings → Filters, create a filter for `from:(funda OR pararius OR huurwoningen OR kamernet)`
-   with **Never send it to Spam**. The bot also checks the spam folder, but filters keep things fast.
+You can use your own Gmail. The bot never downloads your normal mail: it only asks Gmail for messages from
+the housing sites and messages sent to your **housing address**, `yourname+housing@gmail.com`. Gmail delivers
+that address to your normal inbox, so there's nothing to create.
 
-## 2. Free listing alerts → the bot mailbox (20 min)
+1. Turn on 2-Step Verification and create an **App password** (Google Account → Security → App passwords).
+   The setup wizard asks for it; never paste it anywhere else.
+2. Applications go out from your Gmail with replies directed to the housing address, so agents' answers
+   reach the bot.
 
-Create a free account on each site with the **bot mailbox** address and save a search with email alerts.
+## 2. Free listing alerts → your Gmail (20 min)
+
+Use your account on each site (Google login is fine) and save a search with email alerts to your Gmail.
 Filters everywhere: Den Haag, Rijswijk, Voorburg/Leidschendam, Delft (+ Wassenaar, Nootdorp if you like),
 max €1,500, from 25 m², apartment/studio/house, no rooms. Choose the fastest frequency each site offers
 ("direct" / "instant", not daily).
@@ -36,7 +39,7 @@ Set a **monthly spend limit** in the console as well (e.g. $60). The bot also st
 
 ## 4. Google Sheet (15 min)
 
-1. In your private Google account (the new Gmail is fine), create an empty Google Sheet. Its ID is the long
+1. In your Google account, create an empty Google Sheet. Its ID is the long
    part of the URL between `/d/` and `/edit` → `GOOGLE_SHEET_ID`.
 2. Go to console.cloud.google.com → create a project → **APIs & Services → Library** → enable
    **Google Sheets API** and **Google Drive API**.
@@ -48,8 +51,8 @@ The bot creates the tabs, headers and colours itself.
 
 ## 5. Notifications by email (5 min)
 
-Set `NOTIFY_EMAIL` in `.env` to your personal email (not the bot mailbox, not a work address). Alerts arrive
-from the bot mailbox with subjects like:
+The wizard asks where alerts go (your Gmail is fine, never a work address). Alerts arrive
+from your Gmail with subjects like:
 
 - `[Housing bot] 🚩 VIEWING BOOKED`, `🚩 Book the viewing NOW`, `🚩 Agent asks for documents`,
   `🚩 Reply needed`, `🚩 Apply yourself, fast`: act on these quickly.
@@ -79,14 +82,15 @@ On your phone, turn on notifications for that inbox. In Gmail you can add a filt
 
 ## 7. Site logins (optional, 10 min, on your laptop)
 
-Some sites only accept reactions from a logged-in account (Pararius, Kamernet, ...). Create those accounts with
-the **bot mailbox** address, then save each login once:
+Some sites only accept reactions from a logged-in account (Pararius, Kamernet, ...). The bot reuses a saved
+login. Google blocks "Sign in with Google" inside automated browsers, so first give each site account a normal
+password: on the site's login page use **Forgot password** with your Gmail address. Then, on your laptop:
 
 ```bash
 pip install -e . && python -m playwright install chromium
 python -m housing_bot login https://www.pararius.nl/login
 python -m housing_bot login https://kamernet.nl/en/login
-scp secrets/sessions/*.json server:housing/secrets/sessions/
+scp secrets/sessions/*.json root@SERVER:housing/secrets/sessions/
 ```
 
 Without a saved login, those sites end up as "apply yourself" emails with the text ready to paste.

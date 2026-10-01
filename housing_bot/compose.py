@@ -54,7 +54,7 @@ def profile_facts(cfg: Config, listing: Listing) -> dict:
             "employer": a.employer, "contract": a.contract, "nationality": a.nationality, "about": a.about,
         }.items() if v},
         "phone": cfg.secrets.applicant_phone,
-        "email": cfg.secrets.bot_email,
+        "email": cfg.secrets.contact_email,
         "household": "applicant alone" if listing.apply_as != "couple" else "applicant and partner (a couple)",
         "income_meets_requirement": meets_income(cfg, listing),
     }
@@ -98,7 +98,7 @@ def template(cfg: Config, listing: Listing, language: str) -> Composed:
     where = listing.address or "this home"
     agent = listing.details.agent_name if listing.details and listing.details.agent_name else None
     couple = listing.apply_as == "couple" and cfg.partner.present
-    contact = "\n".join(x for x in [name, cfg.secrets.applicant_phone, cfg.secrets.bot_email] if x)
+    contact = "\n".join(x for x in [name, cfg.secrets.applicant_phone, cfg.secrets.contact_email] if x)
     if language == "nl":
         contract = {"permanent": "een vast contract", "temporary": "een tijdelijk contract"}.get(a.contract, "")
         intro = f"Ik ben {a.first_name}" + (f" ({a.age})" if a.age else "")

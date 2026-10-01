@@ -64,10 +64,14 @@ def run(root: Path, ask: Ask = input, secret: Ask = getpass, client: httpx.Clien
     client = client or httpx.Client(timeout=20)
     print("\nAnswers stay on this machine, in .env and config.yaml (both never committed).\n")
 
-    print("== Bot mailbox (the new Gmail just for this) ==")
+    print("== Mailbox ==")
+    gmail = _ask(ask, "Gmail address the bot uses", required=True, check=_email)
+    user, _, domain = gmail.partition("@")
     env = {
-        "BOT_EMAIL": _ask(ask, "Bot Gmail address", required=True, check=_email),
+        "BOT_EMAIL": gmail,
         "BOT_EMAIL_APP_PASSWORD": secret("Gmail app password (16 letters, input hidden): ").replace(" ", ""),
+        "HOUSING_ADDRESS": _ask(ask, "Address agents see and reply to (the bot only reads mail to this address "
+                                     "and from the housing sites)", f"{user}+housing@{domain}", check=_email),
         "IMAP_HOST": "imap.gmail.com", "SMTP_HOST": "smtp.gmail.com", "SMTP_PORT": "465",
     }
     print("\n== Claude, Google Sheet, notifications ==")
@@ -79,7 +83,7 @@ def run(root: Path, ask: Ask = input, secret: Ask = getpass, client: httpx.Clien
     sheet = _ask(ask, "Google Sheet link or ID", required=True)
     match = re.search(r"/d/([A-Za-z0-9_-]+)", sheet)
     env["GOOGLE_SHEET_ID"] = match.group(1) if match else sheet
-    env["NOTIFY_EMAIL"] = _ask(ask, "Your personal email for alerts", required=True, check=_email)
+    env["NOTIFY_EMAIL"] = _ask(ask, "Email address for the bot's alerts to you", gmail, check=_email)
 
     print("\n== You ==")
     env["APPLICANT_FIRST_NAME"] = _ask(ask, "First name", required=True)

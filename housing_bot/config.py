@@ -110,6 +110,9 @@ class Secrets(BaseModel):
     anthropic_api_key: str = ""
     bot_email: str = ""
     bot_email_app_password: str = ""
+    # Address agents see and reply to, e.g. you+housing@gmail.com. The bot only reads mail sent to it
+    # (plus alerts from the housing sites), so the rest of a personal inbox is never touched.
+    housing_address: str = ""
     imap_host: str = "imap.gmail.com"
     smtp_host: str = "smtp.gmail.com"
     smtp_port: int = 465
@@ -117,6 +120,10 @@ class Secrets(BaseModel):
     google_sheet_id: str = ""
     notify_email: str = ""
     applicant_phone: str = ""
+
+    @property
+    def contact_email(self) -> str:
+        return self.housing_address or self.bot_email
 
 
 class Config(BaseModel):
