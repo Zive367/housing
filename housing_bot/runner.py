@@ -146,7 +146,11 @@ def run(ctx: Context) -> None:
 
     if cfg.secrets.dashboard_password:
         from . import web
-        web.serve(ctx, cfg.secrets.dashboard_port)
+        try:
+            web.serve(ctx, cfg.secrets.dashboard_port)
+        except (ValueError, OSError) as e:  # never let the dashboard take the bot down
+            log.error("dashboard not started: %s", e)
+            ctx.notifier.send("Dashboard not started", str(e), important=True)
     else:
         log.info("dashboard off (set DASHBOARD_PASSWORD in .env to turn it on)")
 

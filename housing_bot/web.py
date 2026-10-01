@@ -424,6 +424,41 @@ LOGIN = """<form class=login method=post action=/login>
 autocomplete=current-password><button class='btn primary'>Log in</button></form>"""
 
 
+class LoginLimiter:
+    """Stops password guessing: 5 wrong tries per address per 15 min, and 30 in total per hour."""
+
+    PER_IP, WINDOW, GLOBAL, GLOBAL_WINDOW = 5, 900, 30, 3600
+
+    def __init__(self):
+        self._lock = threading.Lock()
+        self._fails: dict[str, list[float]] = {}
+
+    def _recent(self, ip: str | None, window: int) -> list[float]:
+        now = time.time()
+        stamps = [t for ts in ([self._fails.get(ip, [])] if ip else self._fails.values()) for t in ts]
+        return [t for t in stamps if now - t < window]
+
+    def blocked_for(self, ip: str) -> int:
+        """Seconds until this address may try again (0 = allowed)."""
+        with self._lock:
+            mine, everyone = self._recent(ip, self.WINDOW), self._recent(None, self.GLOBAL_WINDOW)
+            if len(mine) >= self.PER_IP:
+                return int(self.WINDOW - (time.time() - min(mine)))
+            if len(everyone) >= self.GLOBAL:
+                return int(self.GLOBAL_WINDOW - (time.time() - min(everyone)))
+            return 0
+
+    def fail(self, ip: str) -> int:
+        with self._lock:
+            now = time.time()
+            self._fails[ip] = [t for t in self._fails.get(ip, []) if now - t < self.GLOBAL_WINDOW] + [now]
+            return sum(len(v) for v in self._fails.values())
+
+    def success(self, ip: str) -> None:
+        with self._lock:
+            self._fails.pop(ip, None)
+
+
 class Auth:
     def __init__(self, ctx: Context):
         self.password = ctx.cfg.secrets.dashboard_password
@@ -451,8 +486,16 @@ class Auth:
 
 
 def make_handler(ctx: Context, auth: Auth):
+    limiter = LoginLimiter()
+    public = ctx.cfg.secrets.dashboard_public
+
     class Handler(BaseHTTPRequestHandler):
         server_version = "housing"
+
+        def _ip(self) -> str:
+            # The port is only published on localhost, so a forwarded-for header can only come from Tailscale.
+            forwarded = self.headers.get("X-Forwarded-For", "")
+            return forwarded.split(",")[0].strip() or self.client_address[0]
 
         def log_message(self, fmt, *args):
             log.debug("web: " + fmt, *args)
@@ -466,16 +509,26 @@ def make_handler(ctx: Context, auth: Auth):
             self.send_response(code)
             self.send_header("Content-Type", ctype)
             self.send_header("Content-Length", str(len(data)))
-            self.send_header("Cache-Control", "no-store")
-            self.send_header("X-Frame-Options", "DENY")
-            self.send_header("Referrer-Policy", "no-referrer")
+            self._security_headers()
             for key, value in (headers or {}).items():
                 self.send_header(key, value)
             self.end_headers()
             self.wfile.write(data)
 
+        def _security_headers(self) -> None:
+            self.send_header("Cache-Control", "no-store")
+            self.send_header("X-Frame-Options", "DENY")
+            self.send_header("Referrer-Policy", "no-referrer")
+            self.send_header("X-Content-Type-Options", "nosniff")
+            self.send_header("Content-Security-Policy", "default-src 'self'; script-src 'unsafe-inline'; "
+                             "style-src 'unsafe-inline'; img-src 'self' data:; frame-ancestors 'none'; "
+                             "form-action 'self'; base-uri 'none'")
+            if public:
+                self.send_header("Strict-Transport-Security", "max-age=31536000")
+
         def _redirect(self, where: str, headers=None) -> None:
             self.send_response(303)
+            self._security_headers()
             self.send_header("Location", where)
             for key, value in (headers or {}).items():
                 self.send_header(key, value)
@@ -509,10 +562,25 @@ def make_handler(ctx: Context, auth: Auth):
             form = self._form()
             first = {k: v[-1] for k, v in form.items()}
             if path == "/login":
+                ip = self._ip()
+                wait = limiter.blocked_for(ip)
+                if wait:
+                    return self._send(429, page("Log in", LOGIN.replace(
+                        "<h1 style='margin:0'>Housing</h1>",
+                        f"<h1 style='margin:0'>Housing</h1><p class='alert err'>Too many wrong passwords. "
+                        f"Try again in {wait // 60 + 1} min.</p>")))
                 if auth.password and hmac.compare_digest(first.get("password", ""), auth.password):
-                    secure = "; Secure" if self.headers.get("X-Forwarded-Proto") == "https" else ""
+                    limiter.success(ip)
+                    secure = "; Secure" if public or self.headers.get("X-Forwarded-Proto") == "https" else ""
                     return self._redirect("/", {"Set-Cookie": f"{COOKIE}={auth.new_session()}; Path=/; HttpOnly; "
                                                               f"SameSite=Strict; Max-Age={SESSION_DAYS * 86400}{secure}"})
+                total = limiter.fail(ip)
+                log.warning("dashboard: wrong password from %s", ip)
+                if total in (10, 30):
+                    ctx.notifier.send("Someone is guessing your dashboard password",
+                                      f"{total} wrong passwords in the last hour (latest from {ip}). Logins are "
+                                      "being slowed down. If this keeps happening, set a longer DASHBOARD_PASSWORD "
+                                      "or turn the public link off: tailscale funnel --bg off", important=True)
                 time.sleep(1.5)  # slow down guessing
                 return self._redirect("/")
             session = self._session()
@@ -541,8 +609,11 @@ def make_handler(ctx: Context, auth: Auth):
 
 def serve(ctx: Context, port: int = 8080, host: str = "0.0.0.0") -> ThreadingHTTPServer:
     """Start the dashboard in a background thread. Returns the server (call .shutdown() to stop)."""
-    if not ctx.cfg.secrets.dashboard_password:
+    password = ctx.cfg.secrets.dashboard_password
+    if not password:
         raise ValueError("DASHBOARD_PASSWORD is not set in .env")
+    if ctx.cfg.secrets.dashboard_public and len(password) < 14:
+        raise ValueError("DASHBOARD_PUBLIC is on: DASHBOARD_PASSWORD must be at least 14 characters")
     server = ThreadingHTTPServer((host, port), make_handler(ctx, Auth(ctx)))
     threading.Thread(target=server.serve_forever, daemon=True, name="dashboard").start()
     log.info("dashboard on http://%s:%s", host, server.server_port)

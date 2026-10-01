@@ -132,3 +132,32 @@ def test_saved_settings_override_config_at_startup(cfg, tmp_path, monkeypatch):
     settings.load(cfg)
     assert cfg.search.max_rent == 1600 and cfg.partner.first_name == "Somi"
     assert cfg.secrets.anthropic_api_key == ""                          # secrets can't be set from the file
+
+
+def test_password_guessing_is_locked_out_and_reported(site, monkeypatch):
+    ctx, client = site
+    monkeypatch.setattr(web.time, "sleep", lambda s: None)
+    for _ in range(5):
+        assert client.post("/login", data={"password": "guess"}).status_code == 303
+    locked = client.post("/login", data={"password": "correct horse battery"})
+    assert locked.status_code == 429 and "Too many wrong passwords" in locked.text
+    other = client.post("/login", data={"password": "correct horse battery"},
+                        headers={"X-Forwarded-For": "203.0.113.9"})
+    assert other.status_code == 303 and web.COOKIE in other.cookies   # other people aren't locked out
+    for n in range(5):
+        client.post("/login", data={"password": "x"}, headers={"X-Forwarded-For": f"198.51.100.{n}"})
+    assert any("guessing" in m["title"] for m in ctx.notifier.sent)   # 10 failures -> email
+
+
+def test_public_mode_needs_long_password_and_secure_cookie(cfg, store):
+    cfg.secrets.dashboard_public, cfg.secrets.dashboard_password = True, "short-pass"
+    ctx = Context(cfg, store, FakeLLM(), FakeMailbox(), None, FakeNotifier(), httpx.Client())
+    with pytest.raises(ValueError):
+        web.serve(ctx, port=0, host="127.0.0.1")
+    cfg.secrets.dashboard_password = "a much longer passphrase"
+    server = web.serve(ctx, port=0, host="127.0.0.1")
+    try:
+        r = httpx.post(f"http://127.0.0.1:{server.server_port}/login", data={"password": "a much longer passphrase"})
+        assert "Secure" in r.headers["set-cookie"] and "max-age" in r.headers["strict-transport-security"]
+    finally:
+        server.shutdown()

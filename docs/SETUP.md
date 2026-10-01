@@ -132,15 +132,29 @@ it is never on the open internet.
 4. Open the `https://...ts.net` address in your phone's browser, log in with the dashboard password, then
    **Add to Home Screen** (Safari: share button; Chrome: ⋮ menu). It now opens like an app.
 
+### Public link instead (no app needed on phones)
+
+If you'd rather open the dashboard from any phone without installing Tailscale there, publish it with
+Tailscale **Funnel**. Anyone with the link sees the login page, so the password is the only lock:
+
+1. `nano .env`: set `DASHBOARD_PUBLIC=true` and a `DASHBOARD_PASSWORD` of **14+ characters** (a few random
+   words works well). Then `docker compose up -d`.
+2. On the server: `tailscale funnel --bg 8080`. It prints the public `https://...ts.net` link.
+   (The first time, it may print a link to enable Funnel for your account: open it and approve.)
+3. Open that link on any phone and **Add to Home Screen**.
+
+Wrong passwords are limited to 5 per 15 minutes per device, and you get an email if someone keeps guessing.
+To take the link offline again: `tailscale funnel --bg off`.
+
 ### Settings from your phone (you and your partner)
 
 Tap the ⚙ icon on the dashboard to change names, phone, jobs, incomes, budget, sizes, areas, languages and
 practice mode. Saving takes effect immediately and is stored in `data/settings.json` on the server, which wins
 over `config.yaml` and `.env`. Keys and passwords can only be changed on the server.
 
-To give your partner access: in the Tailscale admin console (login.tailscale.com) open **Machines**, click the
-server's **⋯ → Share**, and send her the invite. She installs the Tailscale app, accepts, and logs in to the
-dashboard with the same password.
+To give your partner access: with the public link, just send her the link and the password. With the private
+(Tailscale-only) setup: in login.tailscale.com open **Machines**, click the server's **⋯ → Share**, and send her
+the invite; she installs the Tailscale app, accepts, and logs in with the same password.
 
 ## Day to day
 

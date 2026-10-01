@@ -115,6 +115,8 @@ class Secrets(BaseModel):
     housing_address: str = ""
     dashboard_password: str = ""
     dashboard_port: int = 8080
+    # True when the dashboard is published on the internet (Tailscale Funnel): stricter rules apply.
+    dashboard_public: bool = False
     imap_host: str = "imap.gmail.com"
     smtp_host: str = "smtp.gmail.com"
     smtp_port: int = 587
