@@ -115,7 +115,7 @@ class Secrets(BaseModel):
     housing_address: str = ""
     imap_host: str = "imap.gmail.com"
     smtp_host: str = "smtp.gmail.com"
-    smtp_port: int = 465
+    smtp_port: int = 587
     google_service_account_file: str = ""
     google_sheet_id: str = ""
     notify_email: str = ""

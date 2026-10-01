@@ -7,6 +7,7 @@ import imaplib
 import logging
 import re
 import smtplib
+import ssl
 import time
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
@@ -88,6 +89,16 @@ def parse_email(raw: bytes, folder: str = "INBOX", uid: str = "") -> Email:
     return Email(folder=folder, uid=uid, message_id=message_id,
                  sender=parseaddr(msg["From"] or "")[1].lower(), subject=str(msg["Subject"] or ""),
                  date=sent, text=text, html=html, links=links, references=references)
+
+
+def smtp_connect(host: str, port: int, timeout: float = 30) -> smtplib.SMTP:
+    """Port 465 = TLS from the start; anything else (587) = plain connect + STARTTLS.
+    Many cloud hosts (Hetzner included) block outgoing 465, so 587 is the safe default."""
+    if port == 465:
+        return smtplib.SMTP_SSL(host, port, timeout=timeout)
+    smtp = smtplib.SMTP(host, port, timeout=timeout)
+    smtp.starttls(context=ssl.create_default_context())
+    return smtp
 
 
 class Mailbox:
@@ -172,7 +183,7 @@ class Mailbox:
             msg["In-Reply-To"] = in_reply_to
             msg["References"] = in_reply_to
         msg.set_content(body)
-        with smtplib.SMTP_SSL(s.smtp_host, s.smtp_port, timeout=30) as smtp:
+        with smtp_connect(s.smtp_host, s.smtp_port) as smtp:
             smtp.login(s.bot_email, s.bot_email_app_password)
             smtp.send_message(msg)
         return message_id

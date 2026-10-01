@@ -5,7 +5,6 @@ from __future__ import annotations
 import argparse
 import imaplib
 import logging
-import smtplib
 import sys
 import time
 
@@ -65,9 +64,10 @@ def cmd_check(ctx) -> None:
 
     def smtp() -> str:
         s = cfg.secrets
-        with smtplib.SMTP_SSL(s.smtp_host, s.smtp_port, timeout=20) as server:
+        from .mail import smtp_connect
+        with smtp_connect(s.smtp_host, s.smtp_port, timeout=20) as server:
             server.login(s.bot_email, s.bot_email_app_password)
-        return "login ok"
+        return f"login ok (port {s.smtp_port})"
 
     def sheet() -> str:
         if ctx.sheet is None:

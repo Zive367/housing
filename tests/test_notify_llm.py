@@ -54,9 +54,16 @@ def test_applications_ask_for_replies_on_housing_address(cfg, store, monkeypatch
         def __enter__(self): return self
         def __exit__(self, *a): return False
         def login(self, *a): pass
+        def starttls(self, **k): sent.append("starttls")
         def send_message(self, msg): sent.append(msg)
 
+    monkeypatch.setattr(smtplib, "SMTP", FakeSMTP)
     monkeypatch.setattr(smtplib, "SMTP_SSL", FakeSMTP)
     cfg.secrets.bot_email, cfg.secrets.housing_address = "sam@gmail.com", "sam+housing@gmail.com"
     Mailbox(cfg, store).send("agent@makelaar.nl", "Reactie", "Beste...", from_name="Sam Jansen")
-    assert sent[0]["From"] == "Sam Jansen <sam@gmail.com>" and sent[0]["Reply-To"] == "sam+housing@gmail.com"
+    assert sent[0] == "starttls"                               # default port 587 (Hetzner blocks 465)
+    assert sent[1]["From"] == "Sam Jansen <sam@gmail.com>" and sent[1]["Reply-To"] == "sam+housing@gmail.com"
+    sent.clear()
+    cfg.secrets.smtp_port = 465
+    Mailbox(cfg, store).send("agent@makelaar.nl", "Reactie", "Beste...")
+    assert "starttls" not in sent and len(sent) == 1

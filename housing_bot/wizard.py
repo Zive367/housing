@@ -72,7 +72,7 @@ def run(root: Path, ask: Ask = input, secret: Ask = getpass, client: httpx.Clien
         "BOT_EMAIL_APP_PASSWORD": secret("Gmail app password (16 letters, input hidden): ").replace(" ", ""),
         "HOUSING_ADDRESS": _ask(ask, "Address agents see and reply to (the bot only reads mail to this address "
                                      "and from the housing sites)", f"{user}+housing@{domain}", check=_email),
-        "IMAP_HOST": "imap.gmail.com", "SMTP_HOST": "smtp.gmail.com", "SMTP_PORT": "465",
+        "IMAP_HOST": "imap.gmail.com", "SMTP_HOST": "smtp.gmail.com", "SMTP_PORT": "587",
     }
     print("\n== Claude, Google Sheet, notifications ==")
     env["ANTHROPIC_API_KEY"] = secret("Anthropic API key (input hidden): ").strip()
