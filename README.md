@@ -50,7 +50,9 @@ alert email (Funda / Pararius / Huurwoningen / Kamernet)  reply from an agent
 ## Phone dashboard
 
 A private page (via Tailscale, password-protected) with everything that needs you first and one-tap
-buttons: apply, viewing booked, called, rejected, skip. Setup: step 9 in [docs/SETUP.md](docs/SETUP.md).
+buttons: apply, **Call now** (opens your phone's dialer), viewing booked, called, rejected, skip. A settings page lets
+you and your partner change your details and search criteria; changes apply immediately. Setup: step 9 in
+[docs/SETUP.md](docs/SETUP.md).
 
 ## The Google Sheet
 

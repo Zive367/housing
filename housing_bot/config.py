@@ -184,4 +184,6 @@ def load_config(path: str | Path | None = None) -> Config:
     )
     cfg.applicant = _person("APPLICANT")
     cfg.partner = _person("PARTNER")
+    from . import settings  # dashboard edits (data/settings.json) win over config.yaml and .env
+    settings.load(cfg)
     return cfg

@@ -74,3 +74,61 @@ def test_actions_update_status_learning_and_require_csrf(site):
     client.post("/act", data={"id": "m1", "action": "called", "t": token})
     assert not ctx.store.get("m1").call_needed
     assert client.post("/act", data={"id": "m1", "action": "delete-everything", "t": token}).status_code == 400
+
+
+def test_call_now_on_every_card_with_a_number(site):
+    _, client = site
+    login(client)
+    page = client.get("/").text
+    assert "href='tel:+31703456789'" in page and "Call now" in page
+    assert "Find number" in page                                       # no number known: search for it
+
+
+def test_settings_page_saves_to_file_and_applies_immediately(site, tmp_path, monkeypatch):
+    import json
+
+    from housing_bot import config as config_module
+    ctx, client = site
+    monkeypatch.setattr(config_module, "DATA_DIR", tmp_path)
+    token = login(client)
+    page = client.get("/settings").text
+    assert "Alex" in page and "Sam" in page and "BOT_EMAIL_APP_PASSWORD" not in page
+
+    form = {"t": token, "applicant.first_name": "Sam", "applicant.last_name": "Jansen",
+            "secrets.applicant_phone": "06 23456789", "applicant.age": "30", "applicant.job_title": "analyst",
+            "applicant.employer": "", "applicant.contract": "permanent", "applicant.nationality": "",
+            "applicant.about": "quiet", "applicant.gross_monthly_income": "4600",
+            "partner.first_name": "Alex", "partner.age": "29", "partner.job_title": "UX designer",
+            "partner.contract": "permanent", "partner.gross_monthly_income": "3800",
+            "search.max_rent": "1550", "search.preferred_rent": "1400", "search.min_size_m2_solo": "25",
+            "search.min_size_m2_couple": "40", "search.max_distance_km": "12",
+            "search.municipalities": ["'s-Gravenhage", "Delft"], "search.prefer_furnished": ["off", "on"],
+            "search.require_registration": ["off", "on"], "search.exclude_rooms": "off",
+            "search.min_neighbourhood_score": "", "apply.languages": ["nl"], "apply.dry_run": ["off", "on"],
+            "llm.daily_budget_usd": "5"}
+    response = client.post("/settings", data=form)
+    assert response.status_code == 303
+    cfg = ctx.cfg
+    assert cfg.partner.job_title == "UX designer" and cfg.search.max_rent == 1550
+    assert cfg.secrets.applicant_phone == "+31623456789" and cfg.search.municipalities == ["'s-Gravenhage", "Delft"]
+    assert cfg.search.exclude_rooms is False and cfg.apply.dry_run is True and cfg.apply.languages == ["nl"]
+    saved = json.loads((tmp_path / "settings.json").read_text())
+    assert saved["partner.gross_monthly_income"] == 3800
+
+    bad = dict(form, **{"search.max_rent": "lots", "secrets.applicant_phone": "123"})
+    response = client.post("/settings", data=bad)
+    assert response.status_code == 400 and "not a number" in response.text and "not a valid phone" in response.text
+    assert cfg.search.max_rent == 1550                                  # nothing changed on error
+    assert client.post("/settings", data=dict(form, t="bad")).status_code == 403
+
+
+def test_saved_settings_override_config_at_startup(cfg, tmp_path, monkeypatch):
+    import json
+
+    from housing_bot import config as config_module, settings
+    monkeypatch.setattr(config_module, "DATA_DIR", tmp_path)
+    (tmp_path / "settings.json").write_text(json.dumps({"search.max_rent": 1600, "partner.first_name": "Somi",
+                                                        "secrets.anthropic_api_key": "stolen"}))
+    settings.load(cfg)
+    assert cfg.search.max_rent == 1600 and cfg.partner.first_name == "Somi"
+    assert cfg.secrets.anthropic_api_key == ""                          # secrets can't be set from the file

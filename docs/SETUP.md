@@ -132,6 +132,16 @@ it is never on the open internet.
 4. Open the `https://...ts.net` address in your phone's browser, log in with the dashboard password, then
    **Add to Home Screen** (Safari: share button; Chrome: ⋮ menu). It now opens like an app.
 
+### Settings from your phone (you and your partner)
+
+Tap the ⚙ icon on the dashboard to change names, phone, jobs, incomes, budget, sizes, areas, languages and
+practice mode. Saving takes effect immediately and is stored in `data/settings.json` on the server, which wins
+over `config.yaml` and `.env`. Keys and passwords can only be changed on the server.
+
+To give your partner access: in the Tailscale admin console (login.tailscale.com) open **Machines**, click the
+server's **⋯ → Share**, and send her the invite. She installs the Tailscale app, accepts, and logs in to the
+dashboard with the same password.
+
 ## Day to day
 
 - **Email alerts** (🚩) tell you about booked viewings, viewing invites (book fast), document requests, questions,

@@ -107,5 +107,5 @@ def test_phone_only_listing_needs_a_call(ctx):
     assert listing.status == Status.MANUAL_APPLY and listing.call_needed
     alert = ctx.notifier.sent[-1]
     assert alert["important"] and alert["title"].startswith("Apply: Prinsegracht 12") and "€1,350" in alert["title"]
-    assert alert["details"].startswith(f"Open: {URL}\nOr call: +31703456789")
+    assert alert["details"].startswith(f"Open: {URL}\nCall now: +31703456789")
     assert "Message to paste:\n\nBeste Petra, ..." in alert["details"]

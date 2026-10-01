@@ -206,7 +206,7 @@ def _process(ctx: Context, listing: Listing) -> None:
     where = f"{listing.address} · €{listing.total_rent or '?'} · {listing.bike_minutes or '?'} min by bike"
     if listing.status == Status.MANUAL_APPLY:
         # Laid out for a phone: tap the link, copy the message, done.
-        call = f"\nOr call: {listing.phone}" if listing.call_needed else ""
+        call = f"\nCall now: {listing.phone}" if listing.phone else ""
         rent = f" €{listing.total_rent:,.0f}" if listing.total_rent else ""
         ctx.notifier.send(f"Apply: {listing.address or listing.domain}{rent}",
                           f"Open: {listing.url}{call}\n\nMessage to paste:\n\n{listing.message}\n\n"
@@ -261,8 +261,8 @@ def process_reply(ctx: Context, mail: Email) -> None:
     where = listing.address if listing else (analysis.property_address or mail.subject)
     link = analysis.booking_link or (listing.url if listing else "")
     agent_phone = (listing.phone if listing else "") or analysis.agent_phone or ""
-    contact = " · ".join(x for x in [analysis.agent_name, agent_phone] if x)
-    contact = f" · {contact}" if contact else ""
+    contact = (f" · {analysis.agent_name}" if analysis.agent_name else "") + (
+        f"\nCall now: {agent_phone}" if agent_phone else "")
     if analysis.category == "viewing_confirmed":
         ctx.notifier.send("🚩 VIEWING BOOKED", f"{where} · {analysis.viewing_datetime or 'see email'}{contact}",
                           link, important=True)
