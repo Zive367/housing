@@ -103,7 +103,7 @@ def digest_text(ctx: Context, since: float) -> str:
     if top:
         lines.append("Best new: " + "; ".join(f"{x.address} €{x.total_rent or '?'}" for x in top))
     lines.append(f"Claude spend today so far: ${ctx.store.spend_today():.2f}")
-    return " | ".join(lines)
+    return "\n\n".join(lines)
 
 
 def scheduled(ctx: Context, now: datetime) -> None:

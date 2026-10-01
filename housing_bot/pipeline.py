@@ -205,9 +205,12 @@ def _process(ctx: Context, listing: Listing) -> None:
 
     where = f"{listing.address} · €{listing.total_rent or '?'} · {listing.bike_minutes or '?'} min by bike"
     if listing.status == Status.MANUAL_APPLY:
-        call = f" Call {listing.phone}." if listing.call_needed else ""
-        ctx.notifier.send("Apply yourself, fast", f"{where}. {outcome.detail}.{call}\n\n"
-                          f"Message to paste:\n\n{listing.message}", listing.url, important=True)
+        # Laid out for a phone: tap the link, copy the message, done.
+        call = f"\nOr call: {listing.phone}" if listing.call_needed else ""
+        rent = f" €{listing.total_rent:,.0f}" if listing.total_rent else ""
+        ctx.notifier.send(f"Apply: {listing.address or listing.domain}{rent}",
+                          f"Open: {listing.url}{call}\n\nMessage to paste:\n\n{listing.message}\n\n"
+                          f"---\n{where}\nWhy you: {outcome.detail}", important=True)
     elif listing.status == Status.APPLIED and outcome.detail.startswith("⚠"):
         ctx.notifier.send("Check this application", f"{where}. {outcome.detail[2:]}. If it didn't go through, "
                           f"apply yourself with this message:\n\n{listing.message}", listing.url)

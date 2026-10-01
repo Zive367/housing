@@ -105,4 +105,7 @@ def test_phone_only_listing_needs_a_call(ctx):
     queue(ctx, agent_emails=[], application_method="phone")
     listing = pipeline.process_candidate(ctx, URL, "pararius.nl")
     assert listing.status == Status.MANUAL_APPLY and listing.call_needed
-    assert ctx.notifier.sent[-1]["important"]
+    alert = ctx.notifier.sent[-1]
+    assert alert["important"] and alert["title"].startswith("Apply: Prinsegracht 12") and "€1,350" in alert["title"]
+    assert alert["details"].startswith(f"Open: {URL}\nOr call: +31703456789")
+    assert "Message to paste:\n\nBeste Petra, ..." in alert["details"]
